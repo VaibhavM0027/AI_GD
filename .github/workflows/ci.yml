@@ -7,6 +7,9 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://quorum:quorum@localhost:5432/quorum_ci
+      JWT_SECRET: ci-only-session-secret-not-for-production
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +25,3 @@ jobs:
         run: npm test
       - name: Build production app
         run: npm run build
-        env:
-          DATABASE_URL: file:./dev.db
-          JWT_SECRET: ci-only-session-secret-not-for-production
