@@ -1,0 +1,63 @@
+# Render blueprint for Quorum.
+# Create a Blueprint instance from this repository and Render provisions the
+# web service plus its PostgreSQL database, then wires DATABASE_URL for you.
+services:
+  - type: web
+    name: quorum
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    # `start:deploy` applies the Prisma schema before booting the custom
+    # Next.js + Socket.IO server, so a fresh database works on the first deploy.
+    startCommand: npm run start:deploy
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22.20.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: quorum-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      # Behind Render's proxy these two are required, otherwise the app strips
+      # x-forwarded-host/proto and every POST fails the origin check.
+      - key: TRUST_PROXY
+        value: "1"
+      - key: COOKIE_SECURE
+        value: "true"
+      # Set to the public URL Render shows after the first deploy, e.g.
+      # https://quorum.onrender.com — used to build meeting invite links.
+      - key: APP_URL
+        sync: false
+      - key: AI_ENABLED
+        value: "on"
+      - key: REPORT_VISIBILITY
+        value: own
+      # LiveKit Cloud: paste the project URL and API key/secret from
+      # https://cloud.livekit.io -> Project settings -> Keys.
+      - key: LIVEKIT_HOST
+        sync: false
+      - key: LIVEKIT_URL
+        sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      # Optional: enables Gemini analysis instead of the heuristic fallback.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_FLASH_API_KEY
+        sync: false
+      # Used once by `npm run seed` to provision the host and demo participant.
+      - key: SEED_PARTICIPANT_EMAIL
+        sync: false
+      - key: SEED_PASSWORD
+        sync: false
+
+databases:
+  - name: quorum-db
+    plan: free
+    databaseName: quorum
+    user: quorum
