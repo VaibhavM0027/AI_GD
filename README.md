@@ -39,15 +39,28 @@ Modes:
 
 ## Scoring
 
-Scores are out of 100. Overall weights default to `40,25,35` and are normalized if configured:
+Scores are out of 100 and come from six published criteria, computed from the generated transcript:
 
-| Pillar | Default weight |
+| Criterion | Default weight |
 | --- | ---: |
-| Knowledge and understanding | 40% |
-| Participation | 25% |
-| Point of view and thinking | 35% |
+| Topic relevance | 25% |
+| Communication and clarity | 20% |
+| Knowledge and content quality | 20% |
+| Participation and initiative | 15% |
+| Logical reasoning | 10% |
+| Listening and constructive engagement | 10% |
 
-Knowledge combines live understanding, accuracy, and relevance analysis with the final Gemini evaluation when available. Thinking combines reasoning, originality, and responses to others. Participation is calculated by application code from contributions, speech share, missed invitations, and technical status. Set `AI_WEIGHTS` to three comma-separated weights to change the normalized blend.
+Set `RUBRIC_WEIGHTS` to change them (see Environment). Five numbers (`25,20,20,15,10`) drop the listening criterion and are normalised to 100. Knowledge and reasoning blend live per-contribution analysis with the final Gemini evaluation when available. Clarity is measured on whole speaking turns from the generated transcript, not on the short fragments speech recognition emits at each pause. Participation is calculated by application code from contributions, speech share, missed invitations, and technical status. The live room still shows the three-pillar view (`AI_WEIGHTS`); its overall figure uses the rubric.
+
+## Transcript generator
+
+Live lines are captured in each browser (Web Speech API) and stored per speaker. The generator then builds the transcript used for scoring and export:
+
+- **Merge.** Same-speaker fragments less than 4 seconds apart become one turn, ordered by time, with offsets from the start of the discussion.
+- **Export.** `GET /api/discussions/:id/transcript?format=txt|md|json|srt` (add `&download=1` to save). The host and joined participants can read it; scores are never included. Host buttons are on the session page.
+- **Fill gaps from recordings.** If a participant has no live transcript (for example Firefox or Safari with no speech recognition) but consented to transcription and recording, their microphone recording is decoded with `ffmpeg` and transcribed by the offline Whisper worker. This runs automatically when scoring, and the host can re-run it with **Generate from recordings**. Live lines are never replaced, and generated lines are labelled "(from recording)". Timestamps are placed from the moment the person joined, so they are approximate.
+
+Setup for recording transcription: install `ffmpeg` (or set `FFMPEG`), `pip install -r scripts/stt/requirements.txt`, and run `scripts/stt/fetch-stt-model.sh` (or `.ps1`). Without them, scoring continues with the live transcript and the report stays Incomplete for people who have none.
 
 Each spoken line is labeled **Highly relevant**, **Relevant**, **Partially relevant**, or **Irrelevant** and, when Gemini is available, also receives an accuracy label, concepts, and short live analysis. The report includes speaking time, contribution count, missed opportunities, participation share, and evidence from the transcript.
 
@@ -175,6 +188,8 @@ Copy `.env.example` to `.env`. Never commit `.env`.
 | `GEMINI_API_KEY`, `GEMINI_FLASH_API_KEY` | Server-side Gemini keys; either one can be used for both tiers |
 | `GEMINI_BASE_URL`, `GEMINI_FLASH_MODEL`, `GEMINI_FINAL_MODEL` | Optional API endpoint and tier models |
 | `GEMINI_CONCURRENCY`, `GEMINI_MAX_QUEUE`, `AI_MAX_CALLS_PER_ROOM` | AI queue and discussion-call limits |
+| `RUBRIC_WEIGHTS` | Five or six comma-separated weights: topic relevance, communication, knowledge, participation, reasoning, listening; default `25,20,20,15,10,10` |
+| `FFMPEG`, `STT_MODEL_DIR`, `PYTHON` | Optional paths for recording transcription (ffmpeg binary, Whisper model folder, Python) |
 | `AI_WEIGHTS` | Three comma-separated weights for knowledge, participation, and thinking; default `40,25,35` |
 | `GEMINI_GROUNDING` | Optional Q&A search grounding; default `off` |
 | `REPORT_VISIBILITY` | Reserved report visibility setting; default `own` |
