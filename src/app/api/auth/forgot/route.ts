@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { clientKey, fail, guardOrigin, json, rateLimit, readBody } from "@/lib/http";
 import { forgotSchema, resetSchema } from "@/lib/validators";
 import { appOrigin, hashToken, newToken } from "@/server/ids";
-import { sendMail } from "@/server/mail";
+import { mailConfigured, sendMail } from "@/server/mail";
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
@@ -18,16 +18,31 @@ async function forgot(request: Request) {
   if (!parsed.success) return fail("Enter the email on your account.");
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
   let devResetUrl: string | undefined;
+  let emailSent = false;
   if (user) {
     const token = newToken();
     await prisma.passwordReset.create({
       data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 30 * 60_000) },
     });
     const url = `${appOrigin(request)}/reset-password?token=${token}`;
-    await sendMail(user.email, "Reset your Quorum password", `Open this link within 30 minutes:\n${url}\n\nIf you did not ask for this, ignore the email.`);
+    // A server without a mail transport must not answer as if a link went out, so the
+    // delivery result is reported instead of assumed.
+    try {
+      const result = await sendMail(user.email, "Reset your Quorum password", `Open this link within 30 minutes:\n${url}\n\nIf you did not ask for this, ignore the email.`);
+      emailSent = result.sent;
+    } catch (error) {
+      console.error("Password reset email failed to send.", error);
+    }
     if (process.env.NODE_ENV !== "production") devResetUrl = url;
   }
-  return json({ ok: true, message: "If that email has an account, a reset link is on its way.", devResetUrl });
+  return json({
+    ok: true,
+    emailSent,
+    devResetUrl,
+    message: mailConfigured()
+      ? "If that email has an account, a reset link is on its way."
+      : "This server has no email configured, so no reset link can be sent. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM in the server environment to turn password-reset and invite email on.",
+  });
 }
 
 async function reset(request: Request) {

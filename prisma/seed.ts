@@ -8,8 +8,16 @@ const participantEmail = process.env.SEED_PARTICIPANT_EMAIL || "participant@quor
 const password = process.env.SEED_PASSWORD;
 
 async function upsert(email: string, name: string, role: "HOST" | "PARTICIPANT") {
+  // A deploy must never overwrite a password the account owner already chose, so
+  // an account that exists only has its name and role re-asserted.
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (existing && process.env.SEED_SKIP_IF_PROVISIONED === "1") {
+    await prisma.user.update({ where: { email }, data: { name, role } });
+    console.log(`Kept the existing password for ${email}.`);
+    return;
+  }
   if (!password || password.length < 16 || password.startsWith("replace-with-") || password === "Quorum-demo-2026") {
-    throw new Error("Set a unique SEED_PASSWORD of at least 16 characters in .env before provisioning accounts.");
+    throw new Error("Set a unique SEED_PASSWORD of at least 16 characters before provisioning accounts.");
   }
   const passwordHash = await bcrypt.hash(password, 12);
   await prisma.user.upsert({
@@ -20,13 +28,6 @@ async function upsert(email: string, name: string, role: "HOST" | "PARTICIPANT")
 }
 
 async function main() {
-  // Deployment calls this on every boot; a provisioned database is left alone
-  // so an account whose password was changed later is not reset.
-  const existing = await prisma.user.count();
-  if (process.env.SEED_SKIP_IF_PROVISIONED === "1" && existing > 0) {
-    console.log(`Accounts already exist (${existing}); skipping the seed.`);
-    return;
-  }
   if (participantEmail.toLowerCase() === HOST_EMAIL) {
     throw new Error("SEED_PARTICIPANT_EMAIL must be different from the fixed host email.");
   }
@@ -36,8 +37,7 @@ async function main() {
   });
   await upsert(HOST_EMAIL, "Host", "HOST");
   await upsert(participantEmail, "Rahul Iyer", "PARTICIPANT");
-  console.log(`Provisioned host ${HOST_EMAIL} and participant ${participantEmail}.`);
-  console.log("Password is the SEED_PASSWORD value from the environment.");
+  console.log(`Seeded host ${HOST_EMAIL} and participant ${participantEmail}.`);
 }
 
 main()

@@ -55,6 +55,20 @@ services:
         sync: false
       - key: SEED_PASSWORD
         sync: false
+      # Mail transport. Without SMTP_HOST no email can leave the server, so
+      # password-reset and invite email stay off. A Gmail app password works:
+      # SMTP_HOST=smtp.gmail.com, SMTP_PORT=587, SMTP_USER/SMTP_PASSWORD=your
+      # app password, SMTP_FROM=your address.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
 
 databases:
   - name: quorum-db

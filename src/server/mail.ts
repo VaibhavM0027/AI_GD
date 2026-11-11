@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer";
 
+export function mailConfigured() {
+  return Boolean(process.env.SMTP_HOST);
+}
+
 export async function sendMail(to: string, subject: string, text: string) {
   if (!process.env.SMTP_HOST) {
     if (process.env.NODE_ENV !== "production") {
