@@ -20,6 +20,13 @@ async function upsert(email: string, name: string, role: "HOST" | "PARTICIPANT")
 }
 
 async function main() {
+  // Deployment calls this on every boot; a provisioned database is left alone
+  // so an account whose password was changed later is not reset.
+  const existing = await prisma.user.count();
+  if (process.env.SEED_SKIP_IF_PROVISIONED === "1" && existing > 0) {
+    console.log(`Accounts already exist (${existing}); skipping the seed.`);
+    return;
+  }
   if (participantEmail.toLowerCase() === HOST_EMAIL) {
     throw new Error("SEED_PARTICIPANT_EMAIL must be different from the fixed host email.");
   }
@@ -30,12 +37,12 @@ async function main() {
   await upsert(HOST_EMAIL, "Host", "HOST");
   await upsert(participantEmail, "Rahul Iyer", "PARTICIPANT");
   console.log(`Provisioned host ${HOST_EMAIL} and participant ${participantEmail}.`);
-  console.log("Password is the SEED_PASSWORD value from .env.");
-  await prisma.$disconnect();
+  console.log("Password is the SEED_PASSWORD value from the environment.");
 }
 
-main().catch(async (error) => {
-  console.error(error);
-  await prisma.$disconnect();
-  process.exit(1);
-});
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

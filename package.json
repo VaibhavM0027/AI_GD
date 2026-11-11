@@ -7,7 +7,7 @@
     "dev:https": "node --import tsx scripts/start-dev.mjs --https",
     "build": "next build",
     "start": "node --import tsx scripts/start-production.mjs",
-    "start:deploy": "prisma db push --skip-generate && node --import tsx scripts/start-production.mjs",
+    "start:deploy": "prisma db push --skip-generate && node --import tsx scripts/deploy-start.mjs",
     "fetch:livekit": "node scripts/fetch-livekit.mjs",
     "setup": "node scripts/setup.mjs",
     "cert": "tsx scripts/make-cert.ts",

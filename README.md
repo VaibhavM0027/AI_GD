@@ -157,6 +157,21 @@ A second participant needs another registered participant account, or a second b
 
 If a session was left live when the server stopped, open it and choose **End and score** to close it.
 
+## Deploying to Render
+
+`render.yaml` provisions the web service together with its PostgreSQL database. The deployed database starts empty, so on the first boot `npm run start:deploy` applies the schema and, while there are still no accounts, provisions the host and demo participant from `SEED_PASSWORD`. The sign-in details above therefore work on the live URL without opening a shell. Later boots find existing accounts and leave the database untouched, so passwords changed in the app are preserved.
+
+Set these in the Render service environment (`sync: false` entries are prompted for on creation):
+
+- `SEED_PASSWORD` — a unique value of at least 16 characters. Without it no account is created and nobody can sign in.
+- `SEED_PARTICIPANT_EMAIL` — optional; defaults to `participant@quorum.local`.
+- `LIVEKIT_HOST`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` — from a LiveKit Cloud project. `LIVEKIT_URL` is `wss://<project>.livekit.cloud` and `LIVEKIT_HOST` is `https://<project>.livekit.cloud`. The self-hosted media binary cannot run on Render, so rooms need these.
+- `APP_URL` — the public URL Render assigns, used to build meeting invite links.
+
+`TRUST_PROXY=1` and `COOKIE_SECURE=true` come from the blueprint and are required behind Render's proxy; without them every sign-in POST is rejected. To re-provision the accounts after changing `SEED_PASSWORD`, run `npm run seed` in the service shell.
+
+Free instances sleep after inactivity, and the filesystem is ephemeral, so recordings and journal files are lost on restart.
+
 ## Scripts
 
 | Command | What it does |
