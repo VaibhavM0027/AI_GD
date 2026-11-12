@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password", "/api/health", "/api/auth/login", "/api/auth/register", "/api/auth/forgot", "/api/auth/reset"]);
+const publicPaths = new Set(["/", "/login", "/register", "/forgot-password", "/reset-password", "/api/health", "/api/auth/login", "/api/auth/register", "/api/auth/forgot", "/api/auth/reset", "/api/auth/provision"]);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

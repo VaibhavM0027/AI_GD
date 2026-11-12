@@ -1,10 +1,10 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
-import { HOST_EMAIL } from "../src/lib/roles";
+import { DEMO_PARTICIPANT_EMAIL, DEMO_PARTICIPANT_NAME, HOST_EMAIL } from "../src/lib/roles";
 
 const prisma = new PrismaClient();
-const participantEmail = process.env.SEED_PARTICIPANT_EMAIL || "participant@quorum.local";
+const participantEmail = DEMO_PARTICIPANT_EMAIL;
 const password = process.env.SEED_PASSWORD;
 
 async function upsert(email: string, name: string, role: "HOST" | "PARTICIPANT") {
@@ -36,7 +36,7 @@ async function main() {
     data: { role: "PARTICIPANT" },
   });
   await upsert(HOST_EMAIL, "Host", "HOST");
-  await upsert(participantEmail, "Rahul Iyer", "PARTICIPANT");
+  await upsert(participantEmail, DEMO_PARTICIPANT_NAME, "PARTICIPANT");
   console.log(`Seeded host ${HOST_EMAIL} and participant ${participantEmail}.`);
 }
 

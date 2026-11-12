@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { LoginForm } from "@/components/AuthForms";
+import { LoginForm, ProvisionForm } from "@/components/AuthForms";
 
 export default function LoginPage() {
   return (
@@ -13,6 +13,10 @@ export default function LoginPage() {
         </Suspense>
       </div>
       <p><Link href="/forgot-password">Forgot password</Link> · <Link href="/register">Create an account</Link></p>
+      <h2 className="serif">Create a host or participant account</h2>
+      <div className="card card-pad">
+        <ProvisionForm />
+      </div>
     </main>
   );
 }

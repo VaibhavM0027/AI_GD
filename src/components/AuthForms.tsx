@@ -88,6 +88,39 @@ export function RegisterForm() {
   );
 }
 
+export function ProvisionForm() {
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState("");
+  async function create(role: "HOST" | "PARTICIPANT") {
+    setError("");
+    setMessage("");
+    setPending(role);
+    try {
+      const data = await send("/api/auth/provision", { role, password });
+      setMessage(`Created the ${responseString(data, "label").toLowerCase()} account ${responseString(data, "email")}. Sign in above with the password you typed.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create the account.");
+    } finally {
+      setPending("");
+    }
+  }
+  const ready = password.length >= 8 && pending === "";
+  return (
+    <div className="list">
+      <label className="field">Password<input type="password" value={password} minLength={8} autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} /></label>
+      <p className="muted">Pick an account and it is created with the password above. An account that already exists is left untouched, so this cannot reset a password.</p>
+      {message && <p className="muted">{message}</p>}
+      {error && <p className="error">{error}</p>}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button type="button" className="btn btn-ghost" disabled={!ready} onClick={() => create("HOST")}>{pending === "HOST" ? "Creating…" : "Create host account"}</button>
+        <button type="button" className="btn btn-ghost" disabled={!ready} onClick={() => create("PARTICIPANT")}>{pending === "PARTICIPANT" ? "Creating…" : "Create participant account"}</button>
+      </div>
+    </div>
+  );
+}
+
 export function ForgotForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");

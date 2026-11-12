@@ -159,17 +159,17 @@ If a session was left live when the server stopped, open it and choose **End and
 
 ## Deploying to Render
 
-`render.yaml` provisions the web service together with its PostgreSQL database. The deployed database starts empty, and its accounts are independent of any local database, so on every boot `npm run start:deploy` applies the schema and makes sure the host and demo participant exist, creating a missing account from `SEED_PASSWORD`. An account that already exists keeps the password its owner chose and only has its name and role re-asserted, so signing in on the live URL works without opening a shell.
+`render.yaml` provisions the web service together with its PostgreSQL database. The deployed database starts empty and its accounts are independent of any local database, so open the live URL, go to **Sign in**, and use **Create host account** or **Create participant account**. Type a password of at least 8 characters, click one of the two buttons, and the account is created for you to sign in with. An account that already exists is left exactly as it is, so the buttons can never reset a password its owner chose.
 
 Set these in the Render service environment (`sync: false` entries are prompted for on creation):
 
-- `SEED_PASSWORD` — a unique value of at least 16 characters. The host and demo participant are created with exactly this password, so it is the password to sign in with on the live URL. Without it no account is created and nobody can sign in.
-- `SEED_PARTICIPANT_EMAIL` — optional; defaults to `participant@quorum.local`.
+- `SEED_PASSWORD` — optional. When it is set to a unique value of at least 16 characters, each boot also provisions both accounts, so you can sign in without clicking anything. When it is empty, use the two buttons on **Sign in** instead.
+- `SEED_PARTICIPANT_EMAIL` — optional; defaults to `participant@quorum.local`. It sets the address of the demo participant that both the seed and the participant button create.
 - `LIVEKIT_HOST`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` — from a LiveKit Cloud project. `LIVEKIT_URL` is `wss://<project>.livekit.cloud` and `LIVEKIT_HOST` is `https://<project>.livekit.cloud`. The self-hosted media binary cannot run on Render, so rooms need these.
 - `APP_URL` — the public URL Render assigns, used to build meeting invite links.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` — the mail transport. Without `SMTP_HOST` the reset page says that no link can be sent, because Render provides no mail server. A Gmail app password works (`smtp.gmail.com`, port 587).
 
-`TRUST_PROXY=1` and `COOKIE_SECURE=true` come from the blueprint and are required behind Render's proxy; without them every sign-in POST is rejected. To re-provision the accounts after changing `SEED_PASSWORD`, run `npm run seed` in the service shell.
+`TRUST_PROXY=1` and `COOKIE_SECURE=true` come from the blueprint and are required behind Render's proxy; without them every sign-in POST is rejected. To deliberately overwrite an existing account's password, run `npm run seed` in the service shell.
 
 Free instances sleep after inactivity, and the filesystem is ephemeral, so recordings and journal files are lost on restart.
 
